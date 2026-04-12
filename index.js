@@ -4,13 +4,32 @@ const dotenv = require("dotenv")
 const AWS = require("aws-sdk")
 const multer = require("multer")
 const jwt = require("jsonwebtoken")
+const https = require("https")
 const http = require("http")
+const fs = require("fs")
+const path = require("path")
 const { addVersion, getVersions, clearVersions } = require("./utils/versionStore")
 
 dotenv.config()
 
 const app = express()
-const server = http.createServer(app)
+
+// ── Load SSL certs if available (for HTTPS) ──────────────
+const SSL_KEY  = path.join(process.env.HOME || "/home/ec2-user", "ssl", "key.pem")
+const SSL_CERT = path.join(process.env.HOME || "/home/ec2-user", "ssl", "cert.pem")
+
+let server
+if (fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
+    const sslOptions = {
+        key:  fs.readFileSync(SSL_KEY),
+        cert: fs.readFileSync(SSL_CERT)
+    }
+    server = https.createServer(sslOptions, app)
+    console.log("🔐 HTTPS mode — SSL certs loaded")
+} else {
+    server = http.createServer(app)
+    console.log("⚠️  HTTP mode — SSL certs not found at ~/ssl/")
+}
 
 app.use(cors())
 app.use(express.json())
