@@ -1,0 +1,50 @@
+{
+  "shubhambahutale612006@gmail.com::AI_Exp_8.docx": [
+    {
+      "version": 1,
+      "uploadedAt": "2026-04-11T10:44:34.200Z",
+      "size": 1762771,
+      "etag": "\"1ebdc1e51fdd51e37891514568d5b274\""
+    }
+  ],
+  "shubhambabutale@gmail.com::CCL_Exp_6.docx.enc": [
+    {
+      "version": 5,
+      "uploadedAt": "2026-04-12T08:03:04.689Z",
+      "size": 5708607,
+      "etag": "\"a4e79a94a3db96a6f28745809cb919f4-2\""
+    },
+    {
+      "version": 4,
+      "uploadedAt": "2026-04-12T08:02:34.261Z",
+      "size": 5708607,
+      "etag": "\"a4e79a94a3db96a6f28745809cb919f4-2\""
+    },
+    {
+      "version": 3,
+      "uploadedAt": "2026-04-12T08:02:02.965Z",
+      "size": 5708607,
+      "etag": "\"a4e79a94a3db96a6f28745809cb919f4-2\""
+    },
+    {
+      "version": 2,
+      "uploadedAt": "2026-04-12T07:58:02.237Z",
+      "size": 5708607,
+      "etag": "\"8d0928f373bb386c93fb543485060be2-2\""
+    },
+    {
+      "version": 1,
+      "uploadedAt": "2026-04-12T06:18:54.906Z",
+      "size": 5708607,
+      "etag": "\"fb921d38cc01e8cb75d6338cce4c53fe-2\""
+    }
+  ],
+  "sync@test.com::CCL_Exp_6.docx": [
+    {
+      "version": 1,
+      "uploadedAt": "2026-04-12T08:02:01.508Z",
+      "size": 5708579,
+      "etag": "\"8476927f2b4520f856bf9a0613cb4744-2\""
+    }
+  ]
+}

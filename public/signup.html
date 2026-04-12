@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CloudSync Signup</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #4f46e5, #6366f1, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="glass text-white p-10 rounded-2xl w-96 shadow-xl">
+
+        <h1 class="text-3xl font-bold text-center mb-6">
+            CloudSync
+        </h1>
+
+        <input id="email" type="email" placeholder="Email" class="w-full p-3 mb-3 rounded text-black">
+
+        <input id="password" type="password" placeholder="Password" class="w-full p-3 mb-3 rounded text-black">
+
+        <p id="msg" class="text-sm mb-3 text-red-200"></p>
+
+        <button type="button" onclick="signup()"
+            class="w-full bg-white text-indigo-600 p-3 rounded font-semibold hover:scale-105 active:scale-95 transition cursor-pointer">
+            Create Account
+        </button>
+
+        <p class="text-center mt-4">
+            Already have an account?
+            <a href="login.html" class="underline">Login</a>
+        </p>
+
+    </div>
+
+    <script>
+
+        async function signup() {
+
+            const email = document.getElementById("email").value.trim()
+            const password = document.getElementById("password").value.trim()
+            const msg = document.getElementById("msg")
+
+            msg.innerText = ""
+
+            // -------- VALIDATION --------
+            if (!email || !password) {
+                msg.innerText = "Please fill all fields"
+                return
+            }
+
+            const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/
+
+            if (!email.match(emailPattern)) {
+                msg.innerText = "Enter a valid email"
+                return
+            }
+
+            if (password.length < 6) {
+                msg.innerText = "Password must be at least 6 characters"
+                return
+            }
+
+            // -------- API CALL --------
+            try {
+
+                const res = await fetch("/auth/signup", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ email, password })
+                })
+
+                const text = await res.text()
+
+                if (res.ok) {
+
+                    msg.style.color = "lightgreen"
+                    msg.innerText = "Account created successfully!"
+
+                    setTimeout(() => {
+                        window.location = "login.html"
+                    }, 1200)
+
+                } else {
+
+                    msg.style.color = "#ffcccc"
+                    msg.innerText = text || "Signup failed"
+
+                }
+
+            } catch (error) {
+
+                console.error(error)
+                msg.innerText = "Server error. Try again."
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>
