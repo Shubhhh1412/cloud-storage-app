@@ -40,11 +40,29 @@
                 return
             }
 
-            const res = await fetch("/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
-            })
+            let res
+            try {
+                res = await fetch("/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                })
+            } catch (e) {
+                msg.innerText = "Network error — is the server running?"
+                return
+            }
+
+            if (!res.ok) {
+                const errText = await res.text()
+                if (errText.toLowerCase().includes("not found")) {
+                    msg.innerText = "❌ No account found with that email."
+                } else if (errText.toLowerCase().includes("password") || errText.toLowerCase().includes("wrong")) {
+                    msg.innerText = "❌ Incorrect password. Please try again."
+                } else {
+                    msg.innerText = "❌ " + (errText || "Login failed. Try again.")
+                }
+                return
+            }
 
             const data = await res.json()
 
@@ -55,7 +73,7 @@
                 sessionStorage.setItem("enc_pwd", password)
                 window.location = "dashboard.html"
             } else {
-                msg.innerText = "Invalid credentials"
+                msg.innerText = "❌ Login failed. Please try again."
             }
         }
     </script>

@@ -708,6 +708,13 @@
             const pwd = document.getElementById("enc-key-input").value.trim()
             if (!pwd) { alert("Please enter a passphrase."); return }
 
+            // crypto.subtle only works on HTTPS (secure context)
+            if (!window.crypto || !window.crypto.subtle) {
+                closeEncModal()
+                toast("🔒 Encryption requires HTTPS. Your app is running on HTTP — set up SSL to enable encryption.", "warning")
+                return
+            }
+
             toast("🔑 Deriving encryption key...", "info")
             cryptoKey = await deriveKey(pwd)
 
@@ -721,15 +728,21 @@
             toast("🔐 Encryption active — all uploads will be encrypted!", "success")
         }
 
-        // Auto-derive key if login password is in sessionStorage
+        // Auto-derive key if login password is in sessionStorage (HTTPS only)
         ;(async () => {
             const pwd = sessionStorage.getItem("enc_pwd")
-            if (pwd) {
+            if (pwd && window.crypto && window.crypto.subtle) {
                 cryptoKey = await deriveKey(pwd)
                 const statusEl = document.getElementById("enc-status")
                 const labelEl  = document.getElementById("enc-label")
                 statusEl.className = "enc-status locked"
                 labelEl.textContent = "🔐 Encrypted (AES-256)"
+            } else if (pwd && (!window.crypto || !window.crypto.subtle)) {
+                // Running on HTTP — can't auto-activate encryption
+                const statusEl = document.getElementById("enc-status")
+                const labelEl  = document.getElementById("enc-label")
+                statusEl.title = "Encryption requires HTTPS"
+                labelEl.textContent = "🔓 No Encryption (HTTP)"
             }
         })()
 
@@ -1127,10 +1140,22 @@
 
         // ── User picks specific files to watch ────────────────
         async function watchLocalFiles() {
-            if (!("showOpenFilePicker" in window)) {
-                toast("⚠️ Your browser doesn't support file sync. Please use Chrome or Edge.", "warning")
+            // showOpenFilePicker requires a secure context (HTTPS or localhost)
+            const isSecure = window.isSecureContext
+
+            if (!isSecure || !("showOpenFilePicker" in window)) {
+                // Fallback: use a regular file input for manual upload
+                toast("⚠️ Live file-watching requires HTTPS. Using manual file picker instead — files will be uploaded once.", "warning")
+                const fallbackInput = document.createElement("input")
+                fallbackInput.type = "file"
+                fallbackInput.multiple = true
+                fallbackInput.onchange = () => {
+                    Array.from(fallbackInput.files).forEach(f => uploadFile(f))
+                }
+                fallbackInput.click()
                 return
             }
+
             try {
                 // Open native file picker — user can select one or many files
                 const newHandles = await window.showOpenFilePicker({ multiple: true })
