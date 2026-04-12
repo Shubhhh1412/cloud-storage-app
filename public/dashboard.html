@@ -36,6 +36,7 @@
             height: 100vh;
             overflow: hidden;
             display: flex;
+            flex-direction: column;
         }
 
         /* ── Sidebar ─────────────────────── */
@@ -499,10 +500,51 @@
             display: none;
             opacity: 0.85;
         }
+
+        /* ── HTTPS Secure Banner ─────────────── */
+        .https-banner {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 9px 32px;
+            background: linear-gradient(90deg, rgba(52,211,153,0.12), rgba(99,102,241,0.12));
+            border-bottom: 1px solid rgba(52,211,153,0.2);
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--success);
+            letter-spacing: 0.02em;
+            animation: slideDown 0.5s ease;
+        }
+        .https-banner.visible { display: flex; }
+        .https-banner strong { color: var(--text); }
+        .https-banner .https-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(52,211,153,0.15);
+            border: 1px solid rgba(52,211,153,0.3);
+            border-radius: 99px; padding: 2px 10px;
+            font-size: 0.72rem; font-weight: 700;
+            color: var(--success);
+            letter-spacing: 0.04em;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 
 <body>
+
+    <!-- HTTPS Secure Banner (shown only when isSecureContext = true) -->
+    <div id="https-banner" class="https-banner">
+        <span class="https-pill">🔒 HTTPS</span>
+        <strong>Secure Context Active</strong> —
+        End-to-end <strong>encryption</strong> &amp; <strong>live file-watching</strong> are fully enabled via Cloudflare Tunnel.
+    </div>
+
+    <!-- Dashboard Layout -->
+    <div style="display:flex;flex-direction:column;width:100%;height:100vh;overflow:hidden;">
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -583,6 +625,8 @@
         </div>
 
     </div>
+
+    </div><!-- /dashboard layout -->
 
     <!-- Encryption Key Modal -->
     <div class="enc-modal-overlay" id="enc-modal-overlay">
@@ -708,10 +752,10 @@
             const pwd = document.getElementById("enc-key-input").value.trim()
             if (!pwd) { alert("Please enter a passphrase."); return }
 
-            // crypto.subtle only works on HTTPS (secure context)
-            if (!window.crypto || !window.crypto.subtle) {
+            // crypto.subtle works on HTTPS (secure context) — which is guaranteed by Cloudflare Tunnel
+            if (!window.isSecureContext || !window.crypto || !window.crypto.subtle) {
                 closeEncModal()
-                toast("🔒 Encryption requires HTTPS. Your app is running on HTTP — set up SSL to enable encryption.", "warning")
+                toast("⚠️ Encryption requires a secure context (HTTPS). Open the app via your Cloudflare tunnel URL.", "warning")
                 return
             }
 
@@ -725,24 +769,27 @@
             labelEl.textContent = "🔐 Encrypted (AES-256)"
 
             closeEncModal()
-            toast("🔐 Encryption active — all uploads will be encrypted!", "success")
+            toast("🔐 Encryption active — all uploads will be encrypted via AES-256-GCM!", "success")
         }
 
-        // Auto-derive key if login password is in sessionStorage (HTTPS only)
+        // Auto-derive key if login password is in sessionStorage (works automatically on HTTPS / Cloudflare Tunnel)
         ;(async () => {
             const pwd = sessionStorage.getItem("enc_pwd")
-            if (pwd && window.crypto && window.crypto.subtle) {
+            if (pwd && window.isSecureContext && window.crypto && window.crypto.subtle) {
                 cryptoKey = await deriveKey(pwd)
                 const statusEl = document.getElementById("enc-status")
                 const labelEl  = document.getElementById("enc-label")
                 statusEl.className = "enc-status locked"
                 labelEl.textContent = "🔐 Encrypted (AES-256)"
-            } else if (pwd && (!window.crypto || !window.crypto.subtle)) {
-                // Running on HTTP — can't auto-activate encryption
+                // Small delay so user sees the toast after page loads
+                setTimeout(() => toast("🔐 Encryption auto-activated from your login password", "success"), 1200)
+            } else if (pwd && !window.isSecureContext) {
+                // Not on HTTPS — inform user to use the Cloudflare tunnel URL
                 const statusEl = document.getElementById("enc-status")
                 const labelEl  = document.getElementById("enc-label")
-                statusEl.title = "Encryption requires HTTPS"
-                labelEl.textContent = "🔓 No Encryption (HTTP)"
+                statusEl.title = "Open via your Cloudflare HTTPS tunnel to enable encryption"
+                labelEl.textContent = "🔓 Encryption Unavailable"
+                setTimeout(() => toast("🔓 Open the app via your Cloudflare HTTPS tunnel to enable encryption & file-watch.", "warning"), 1000)
             }
         })()
 
@@ -1140,19 +1187,12 @@
 
         // ── User picks specific files to watch ────────────────
         async function watchLocalFiles() {
-            // showOpenFilePicker requires a secure context (HTTPS or localhost)
-            const isSecure = window.isSecureContext
+            // showOpenFilePicker requires a secure context (HTTPS) — guaranteed by Cloudflare Tunnel
+            const isSecure = window.isSecureContext && ("showOpenFilePicker" in window)
 
-            if (!isSecure || !("showOpenFilePicker" in window)) {
-                // Fallback: use a regular file input for manual upload
-                toast("⚠️ Live file-watching requires HTTPS. Using manual file picker instead — files will be uploaded once.", "warning")
-                const fallbackInput = document.createElement("input")
-                fallbackInput.type = "file"
-                fallbackInput.multiple = true
-                fallbackInput.onchange = () => {
-                    Array.from(fallbackInput.files).forEach(f => uploadFile(f))
-                }
-                fallbackInput.click()
+            if (!isSecure) {
+                // Not on HTTPS — prompt user to use the tunnel URL
+                toast("⚠️ Live file-watching requires HTTPS. Open the app via your Cloudflare tunnel URL (https://…trycloudflare.com).", "warning")
                 return
             }
 
@@ -1274,6 +1314,14 @@
                 }
             } catch (err) {
                 console.warn("Could not restore watched files:", err)
+            }
+        })()
+
+        // ── HTTPS Secure Context Banner ───────────────────────
+        ;(() => {
+            if (window.isSecureContext) {
+                const banner = document.getElementById("https-banner")
+                if (banner) banner.classList.add("visible")
             }
         })()
 
