@@ -7,6 +7,7 @@ real-time updates.
 
 ------------------------------------------------------------------------
 
+
 ## 🚀 Features
 
 -   🔐 **User Authentication**
@@ -26,6 +27,7 @@ real-time updates.
     -   Dashboard for file interaction
 
 ------------------------------------------------------------------------
+
 
 ## 🛠️ Tech Stack
 
